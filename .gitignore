@@ -1,0 +1,11 @@
+#ide
+.idea/
+.vscode/
+*.iml
+
+#rust
+backend/target
+
+
+#nodejs
+nodes_modules/
