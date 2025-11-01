@@ -1,6 +1,8 @@
 use crate::domain::prediction::PredictionResult;
 use crate::domain::stock::Stock;
+use crate::domain::stock_summary::StockSummary;
 use crate::infrastructure::db::stock_repository::StockRepository;
+use anyhow::Result;
 use chrono::Utc;
 
 /// Service principal pour gérer les actions et prédictions
@@ -17,6 +19,11 @@ impl<R: StockRepository + Clone> StockService<R> {
     /// Récupère l'historique des prix pour un symbole donné
     pub async fn get_history(&self, symbol: &str) -> Vec<Stock> {
         self.repo.get_history(symbol).await
+    }
+
+    /// 🔍 Recherche un résumé d'action (symbol, name, price, etc.)
+    pub async fn search_stock(&self, symbol: &str) -> Result<Option<StockSummary>> {
+        self.repo.search_stock(symbol).await
     }
 
     /// Calcule une prédiction simple pour un symbole

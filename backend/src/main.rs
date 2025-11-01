@@ -1,10 +1,9 @@
 use axum::debug_handler;
+use serde::{Serialize, Deserialize};
 use axum::{
     extract::{Extension, Path},
-    routing::{get, post},
     Json, Router,
 };
-use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tower_http::cors::{Any, CorsLayer};
@@ -12,7 +11,9 @@ use tower_http::cors::{Any, CorsLayer};
 mod application;
 mod domain;
 mod infrastructure;
+mod interfaces;
 
+use interfaces::stock_router;
 use application::stock_service::StockService;
 use domain::prediction::PredictionResult;
 use infrastructure::external_api::yahoo_client::YahooFinanceRepository;
@@ -60,9 +61,7 @@ async fn main() {
     let stock_service = Arc::new(StockService::new(yahoo_repo));
 
     let app = Router::new()
-        .route("/api/hello", get(hello))
-        .route("/api/echo", post(echo))
-        .route("/api/stocks/:symbol/predict", get(predict_stock))
+        .nest("/api", stock_router(stock_service.clone()))
         .layer(cors)
         .layer(Extension(stock_service));
 
