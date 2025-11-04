@@ -9,7 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.4.38"
+    "@vueuse/head": "^2.0.0",
+    "vite-ssg": "^28.2.2",
+    "vue": "^3.4.38",
+    "vue-router": "^4.6.3"
   },
   "devDependencies": {
     "@types/node": "^24.6.0",

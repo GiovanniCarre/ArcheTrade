@@ -6,6 +6,8 @@
 #rust
 backend/target
 
+#secret
+*.env
 
 #nodejs
 nodes_modules/

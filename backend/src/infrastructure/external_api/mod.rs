@@ -1,1 +1,1 @@
-pub mod yahoo_client;
+pub mod job_fetch_symbol;

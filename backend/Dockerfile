@@ -1,23 +1,17 @@
-# Étape 1 : Build
-FROM rust:1.72 as builder
+# Image avec Rust et Cargo pour le dev
+FROM rust:1.83
 
+# Répertoire de travail
 WORKDIR /usr/src/backend
 
-# Copier Cargo.toml et Cargo.lock pour le cache
-COPY Cargo.toml Cargo.lock ./
-RUN mkdir src && echo "fn main(){}" > src/main.rs
-RUN cargo build --release
-# Maintenant copier le vrai code
-COPY ./src ./src
-RUN cargo build --release
+# Copier le projet dans l'image (utile pour build initial)
+COPY . .
 
-# Étape 2 : Runtime léger
-FROM debian:buster-slim
+# Installer des outils utiles pour dev (optionnel)
+RUN rustup component add clippy rustfmt
 
-WORKDIR /usr/app
-COPY --from=builder /usr/src/backend/target/release/backend .
-
-# Exposer le port (celui d'Axum)
+# Exposer le port utilisé par ton serveur
 EXPOSE 3000
 
-CMD ["./backend"]
+# Lancer le serveur en mode dev avec hot reload
+CMD ["cargo", "run"]

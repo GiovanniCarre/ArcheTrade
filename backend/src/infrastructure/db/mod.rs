@@ -1,1 +1,1 @@
-pub mod stock_repository;
+pub mod mongo_stock_manager;
