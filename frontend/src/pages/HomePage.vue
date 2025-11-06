@@ -1,144 +1,213 @@
-<template>
+<template xmlns="http://www.w3.org/1999/html">
   <div>
-    <!-- Header -->
     <Header />
-
-    <!-- Hero Section -->
-    <section class="hero">
-      <div class="hero-content">
-        <h1 class="hero-title">Analyze, Compare & Predict Stocks with AI</h1>
-        <p class="hero-desc">
+    <section id="contentPage">
+        <h1 id="title">Analyze, Compare and Predict stocks with AI</h1>
+        <p id="description">
           Discover the best stocks, optimize your portfolio and make data-driven decisions with our AI-powered tools.
         </p>
-        <div class="search-bar">
-          <input type="text" placeholder="Search stock ticker..." v-model="query" />
-          <button @click="searchStock">Analyze</button>
-        </div>
+      <div id="searchWrapper">
+          <div class="search-bar" @keydown.down.prevent="moveDown" @keydown.up.prevent="moveUp" @keydown.enter.prevent="enterKey">
+            <div id="searchInputWrapper">
+              <input
+                  type="text"
+                  placeholder="Search stock ticker..."
+                  v-model="query"
+                  @input="onInput"
+              />
+              <button id="searchButton" @click="selectedStock && selectStock(selectedStock)" :disabled="!selectedStock">
+                Analyze
+              </button>
+            </div>
+
+              <ul v-if="filteredStocks.length" class="suggestions">
+                <li
+                    v-for="(stock, index) in filteredStocks"
+                    :key="stock.symbol"
+                    :class="{ 'active': index === highlightedIndex }"
+                    @mousedown.prevent="selectStock(stock)"
+                >
+                  {{ stock.symbol }} - {{ stock.name }}
+                </li>
+
+              </ul>
+          </div>
+
+        <p v-if="searchUnavailable" class="search-error">
+          Service de recherche indisponible - réessayez plus tard.
+        </p>
       </div>
     </section>
 
-    <!-- Top Stocks Section -->
-    <section class="top-stocks">
-      <h2>Top Stocks of the Day</h2>
-      <div class="stocks-grid">
-        <div class="stock-card" v-for="stock in topStocks" :key="stock.symbol">
-          <h3>{{ stock.symbol }}</h3>
-          <p>{{ stock.name }}</p>
-          <p :class="{'positive': stock.change >= 0, 'negative': stock.change < 0}">
-            {{ stock.change >= 0 ? '+' : ''}}{{ stock.change }}%
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-      <p>© 2025 MarketPulse. All rights reserved.</p>
-    </footer>
+    <Footer />
   </div>
 </template>
 
-<script setup>
-import Header from '../components/Header.vue'
-import { ref } from 'vue'
+
+<script setup lang="ts">
+import Header from '../components/shared/Header.vue'
+import Footer from '../components/shared/Footer.vue'
+import { computed, ref } from 'vue'
+import { StockService } from '../services/StockService'
+import type { StockSummary } from '../models/StockSummary'
 
 const query = ref('')
+const stockSearch = ref<StockSummary[]>([])
+const selectedStock = ref<StockSummary | null>(null)
+const highlightedIndex = ref(-1)
 
-// Dummy top stocks data
-const topStocks = ref([
-  { symbol: 'AAPL', name: 'Apple Inc.', change: 1.2 },
-  { symbol: 'TSLA', name: 'Tesla, Inc.', change: -0.8 },
-  { symbol: 'AMZN', name: 'Amazon.com, Inc.', change: 0.5 },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.', change: 2.1 }
-])
+const searchUnavailable = ref(false)
+import { useRouter } from 'vue-router'
+const router = useRouter()
 
-const searchStock = () => {
-  alert(`Analyzing ${query.value}... (AI feature coming soon!)`)
+const filteredStocks = computed(() => {
+  if (!query.value) return []
+  return stockSearch.value
+})
+
+const stockService = new StockService()
+
+const searchStock = async () => {
+  if (!query.value) return
+  try {
+    searchUnavailable.value = false
+    stockSearch.value = await stockService.searchStocks(query.value)
+    selectedStock.value = null
+  } catch (err) {
+    console.error(err)
+    searchUnavailable.value = true
+  }
+}
+
+const onInput = async () => {
+  await searchStock()
+}
+
+const moveDown = () => {
+  if (highlightedIndex.value < filteredStocks.value.length - 1) {
+    highlightedIndex.value++
+  }
+}
+
+const moveUp = () => {
+  if (highlightedIndex.value > 0) {
+    highlightedIndex.value--
+  }
+}
+
+const enterKey = () => {
+  const stock = filteredStocks.value[highlightedIndex.value]
+  if (stock) {
+    selectStock(stock)
+  } else {
+    searchStock()
+  }
+}
+
+const selectStock = (stock: StockSummary) => {
+  selectedStock.value = stock
+  query.value = `${stock.symbol} - ${stock.name}`
+  stockSearch.value = []
+  highlightedIndex.value = -1
+
+  router.push({ path: '/stock', query: { symbol: stock.symbol } })
 }
 </script>
 
 <style scoped>
-/* Hero Section */
-.hero {
-  background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+#contentPage {
+  background: linear-gradient(135deg, purple 0%, #a29bfe 100%);
   color: #fff;
   text-align: center;
   padding: 6rem 1rem;
-  clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%); /* hexagonal-ish cut */
 }
-.hero-title {
+
+#title {
   font-size: 3rem;
   font-weight: 700;
   margin-bottom: 1rem;
 }
-.hero-desc {
+
+#description {
   font-size: 1.2rem;
   margin-bottom: 2rem;
 }
+
+#searchWrapper{
+  text-align: center;
+  vertical-align: middle;
+  display: inline-block;
+}
+
 .search-bar {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
+  display: inline-block;
 }
-.search-bar input {
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  border: none;
-  width: 300px;
-  font-size: 1rem;
-}
-.search-bar button {
-  padding: 0.75rem 1.5rem;
-  background-color: #fff;
-  color: #6c5ce7;
-  font-weight: 700;
+
+#searchButton {
+  height: 2.5rem;
+  background-color: white;
+  color: purple;
   border-radius: 8px;
   border: none;
   cursor: pointer;
   transition: all 0.3s;
+  font-weight: bolder;
+  font-size:1rem;
+  padding: 0 0.5rem;
 }
+
+.search-bar input {
+  border-radius: 8px;
+  height: 2.5rem;
+  text-align: center;
+  color:purple;
+  border: none;
+  font-weight: bolder;
+  font-size:1rem;
+  width: 40rem;
+}
+
 .search-bar button:hover {
-  background-color: #f0f0f0;
+  background-color: white;
 }
 
-/* Top Stocks Section */
-.top-stocks {
-  max-width: 1200px;
-  margin: 4rem auto;
-  padding: 0 1rem;
-  text-align: center;
-}
-.stocks-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 2rem;
-  margin-top: 2rem;
-}
-.stock-card {
-  background: #6c5ce7;
-  color: #fff;
-  padding: 1.5rem;
-  border-radius: 12px;
-  transition: transform 0.3s;
-}
-.stock-card:hover {
-  transform: translateY(-5px);
-}
-.stock-card .positive {
-  color: #00ff99;
-  font-weight: 700;
-}
-.stock-card .negative {
-  color: #ff4d4d;
-  font-weight: 700;
+.suggestions{
+  background-color:white;
+  border:solid black 2px;
+  border-radius: 2rem;
+  list-style: none;
+  padding: 0;
+  width: 40rem;
+  overflow: hidden;
 }
 
-/* Footer */
-.footer {
-  background-color: #2d2d2d;
-  color: #fff;
-  text-align: center;
-  padding: 2rem 0;
-  margin-top: 4rem;
+.suggestions li {
+  font-size:1rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  color:black;
 }
+
+.suggestions li.active,
+.suggestions li:hover {
+  background-color: #6c5ce7;
+  color: white;
+}
+
+#searchInputWrapper{
+  display: flex;
+  gap:2rem;
+  align-items: center
+}
+
+.search-error {
+  margin-top: 1rem;
+  background: rgba(255, 77, 77, 0.15);
+  color: #ffb3b3;
+  border: 2px solid rgba(255, 77, 77, 0.4);
+  border-radius: 1rem;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+}
+
 </style>

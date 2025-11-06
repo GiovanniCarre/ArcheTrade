@@ -15,7 +15,7 @@
 </template>
 
 <script setup>
-import logo from '../assets/archeTrade.png'
+import logo from '../../assets/archeTrade.png'
 </script>
 
 <style scoped>

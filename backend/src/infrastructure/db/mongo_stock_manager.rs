@@ -4,6 +4,7 @@ use mongodb::bson::{doc, Regex};
 use anyhow::Result;
 use crate::domain::utils::can_be_symbol;
 use futures::stream::TryStreamExt;
+use mongodb::options::FindOptions;
 
 pub struct MongoStockManager {
     collection: Collection<StockSummary>,
@@ -32,12 +33,12 @@ impl MongoStockManager {
         } else {
             doc! { "name": { "$regex": Regex { pattern: name_query.to_string(), options: "i".to_string() } } }
         };
+        let cursor = self.collection
+            .find(filter)
+            .limit(10)
+            .await?;
 
-        let mut cursor = self.collection.find(filter).await?;
-        let mut results = Vec::new();
-        while let Some(stock) = cursor.try_next().await? {
-            results.push(stock);
-        }
+        let results: Vec<StockSummary> = cursor.try_collect().await?;
         Ok(results)
     }
 }
