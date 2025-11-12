@@ -1,10 +1,12 @@
 <template>
   <Header />
-  <HomePage />
+  <router-view />
+  <Footer/>
 </template>
 
 <script setup lang="ts">
-import HomePage from "./pages/HomePage.vue";
+import Header from "@/components/shared/Header.vue";
+import Footer from "./components/shared/Footer.vue";
 </script>
 
 <style>

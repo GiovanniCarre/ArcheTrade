@@ -15,7 +15,7 @@ if ($oldContainer) {
 # Build l'image
 docker build -t marketpulse-frontend .
 
-# Run le container sur un port libre (ici 3001)
-docker run -d -p 3001:80 -e BACKEND_URL=$env:BACKEND_URL --name marketpulse-frontend marketpulse-frontend
+# Run le container sur un port libre (ici 3001) en mappant correctement le port 3000 interne
+docker run -d -p 3001:3000 -e BACKEND_URL=$env:BACKEND_URL --name marketpulse-frontend marketpulse-frontend
 
 Write-Host "Frontend running on http://localhost:3001"

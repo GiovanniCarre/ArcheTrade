@@ -1,5 +1,4 @@
-pub mod prediction;
-pub mod indicators;
 pub mod stock;
 pub mod stock_summary;
 pub mod utils;
+pub mod generic_stock_data_dto;

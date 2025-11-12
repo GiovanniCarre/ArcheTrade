@@ -1,6 +1,5 @@
 <template xmlns="http://www.w3.org/1999/html">
   <div>
-    <Header />
     <section id="contentPage">
         <h1 id="title">Analyze, Compare and Predict stocks with AI</h1>
         <p id="description">
@@ -38,18 +37,14 @@
         </p>
       </div>
     </section>
-
-    <Footer />
   </div>
 </template>
 
 
 <script setup lang="ts">
-import Header from '../components/shared/Header.vue'
-import Footer from '../components/shared/Footer.vue'
 import { computed, ref } from 'vue'
-import { StockService } from '../services/StockService'
-import type { StockSummary } from '../models/StockSummary'
+import { StockService } from '../services/StockService.ts'
+import type { StockSummary } from '../models/StockSummary.ts'
 
 const query = ref('')
 const stockSearch = ref<StockSummary[]>([])

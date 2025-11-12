@@ -1,6 +1,6 @@
-# 📈 MarketPulse
+# 📈 ArcheTrade
 
-**MarketPulse** est une application de simulation et d'analyse de données financières.  
+**ArcheTrade** est une application de simulation et d'analyse de données financières.  
 Backend en **Rust (Axum)** et frontend en **Vue.js + TypeScript + ECharts**.
 
 ---

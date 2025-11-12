@@ -1,6 +1,8 @@
-import type { StockSummary } from "../models/StockSummary";
+import type {StockSummary} from "../models/StockSummary";
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL;
+// ❌ plus besoin de dotenv
+// ✅ utilise import.meta.env à la place
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
 export class StockService {
     private baseUrl: string;
@@ -14,10 +16,9 @@ export class StockService {
         const res = await fetch(url);
 
         if (!res.ok) {
-            throw new Error(`Erreur API: ${res.status}`);
+            throw new Error(`Erreur :${res.status}`);
         }
 
-        const data: StockSummary[] = await res.json();
-        return data;
+        return await res.json();
     }
 }
