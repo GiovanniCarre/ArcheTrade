@@ -1,22 +1,29 @@
 use axum::{
-    extract::{Query},
+    extract::Query,
     response::Json,
     routing::get,
     Router,
+    extract::Extension,
 };
 use crate::application::stock_manager::StockManager;
-use chrono::NaiveDate;
-use axum::extract::Extension;
 use crate::domain::stock_summary::StockSummary;
+use crate::infrastructure::db::mongo_stock_manager::MongoStockManager;
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use crate::infrastructure::db::mongo_stock_manager::MongoStockManager;
 
+// --- QUERY STRUCTS ---
 #[derive(Deserialize)]
 pub struct SearchQuery {
     query: String,
 }
 
+#[derive(Deserialize)]
+pub struct StockQuery {
+    symbol: String,
+}
+
+// --- RESPONSE STRUCTS ---
 #[derive(Serialize)]
 pub struct StockSummaryResponse {
     symbol: String,
@@ -24,28 +31,35 @@ pub struct StockSummaryResponse {
     provider: String,
 }
 
-#[derive(Deserialize)]
-pub struct StockQuery {
-    symbol: String,
+#[derive(Serialize)]
+pub struct StockPointResponse {
+    timestamp: chrono::DateTime<chrono::Utc>,
+    open: f64,
+    close: f64,
+    high: f64,
+    low: f64,
+    volume: f64,
 }
+
 #[derive(Serialize)]
 pub struct StockResponse {
     symbol: String,
     provider: Option<String>,
-    date: NaiveDate,
-    open: Option<f64>,
-    close: Option<f64>,
-    high: Option<f64>,
-    low: Option<f64>,
-    volume: Option<f64>,
-    extra: Option<serde_json::Value>,
+    historical_segments: Vec<StockSegmentResponse>,
 }
 
+#[derive(Serialize)]
+pub struct StockSegmentResponse {
+    start_date: chrono::DateTime<chrono::Utc>,
+    end_date: chrono::DateTime<chrono::Utc>,
+    interval: String,
+    data_points: Vec<StockPointResponse>,
+}
 
 // ---- ROUTER ----
 pub fn create_router(
     mongo_manager: Arc<MongoStockManager>,
-    stock_manager: Arc<StockManager>
+    stock_manager: Arc<StockManager>,
 ) -> Router {
     Router::new()
         .route("/stocks/search", get(search_stock))
@@ -54,14 +68,15 @@ pub fn create_router(
         .layer(Extension(mongo_manager))
 }
 
-// ---- HANDLER ----
+// ---- HANDLERS ----
 async fn search_stock(
     Query(query): Query<SearchQuery>,
     Extension(mongo_manager): Extension<Arc<MongoStockManager>>,
 ) -> Json<Vec<StockSummaryResponse>> {
     match mongo_manager.search_by_name(&query.query).await {
         Ok(stocks) => {
-            let response: Vec<StockSummaryResponse> = stocks.into_iter()
+            let response: Vec<StockSummaryResponse> = stocks
+                .into_iter()
                 .map(|s: StockSummary| StockSummaryResponse {
                     symbol: s.symbol,
                     name: s.name,
@@ -87,14 +102,20 @@ async fn get_stock_info(
                 .into_iter()
                 .map(|dto| StockResponse {
                     symbol: dto.symbol,
-                    provider: dto.provider,
-                    date: dto.date,
-                    open: dto.open,
-                    close: dto.close,
-                    high: dto.high,
-                    low: dto.low,
-                    volume: dto.volume,
-                    extra: dto.extra,
+                    provider: dto.provider.clone(),
+                    historical_segments: dto.historical_segments.into_iter().map(|seg| StockSegmentResponse {
+                        start_date: seg.start_date,
+                        end_date: seg.end_date,
+                        interval: format!("{:?}", seg.interval),
+                        data_points: seg.data_points.into_iter().map(|pt| StockPointResponse {
+                            timestamp: pt.timestamp,
+                            open: pt.open,
+                            close: pt.close,
+                            high: pt.high,
+                            low: pt.low,
+                            volume: pt.volume,
+                        }).collect(),
+                    }).collect(),
                 })
                 .collect();
             Json(response)

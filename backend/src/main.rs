@@ -6,6 +6,7 @@ use axum::{
     Router,
     extract::Extension,
 };
+use infrastructure::external_api::stock_repository::finnhub_repository::FinnhubRepository;
 use crate::application::stock_repository::StockRepository;
 use crate::infrastructure::db::mongo_stock_manager::MongoStockManager;
 use std::sync::Arc;
@@ -41,7 +42,9 @@ async fn main() {
         }
     };
 
-    let external_repos: Vec<Arc<dyn StockRepository>> = vec![];
+    let finnhub_api_key = env::var("FINNHUB_API_KEY").expect("FINNHUB_API_KEY manquant dans .env");
+    let finnhub_repo = Arc::new(FinnhubRepository::new(finnhub_api_key));
+    let external_repos: Vec<Arc<dyn StockRepository>> = vec![finnhub_repo];
 
     let stock_manager = Arc::new(StockManager::new(mongo_manager.clone(), external_repos));
 

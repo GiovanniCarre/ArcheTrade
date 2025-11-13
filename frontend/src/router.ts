@@ -7,7 +7,7 @@ export function createRouter() {
         history: createWebHistory(),
         routes: [
             { path: '/', component: HomePage },
-            { path: '/stock/:id', component: StockDetailPage },
+            { path: '/stock', component: StockDetailPage }
         ],
     });
 }

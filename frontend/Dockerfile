@@ -1,31 +1,38 @@
-# ========================
-# Étape 1 : Builder
-# ========================
-FROM node:20-alpine AS builder
+# ---- Stage 1: Build the app ----
+FROM node:20-slim AS builder
+
+# Set working directory
 WORKDIR /app
 
-# Copier package.json et package-lock.json / yarn.lock
+# Copy package.json and package-lock.json
 COPY package*.json ./
+
+# Install dependencies (npm ci pour reproducibilité)
 RUN npm ci
 
-# Copier le reste du projet
+# Copy the rest of the project
 COPY . .
 
-# Générer la build SSR
-# Assure-toi que ton package.json a un script "build:ssr" ou "build"
-RUN npm run build:ssr
+# Force rebuild des binaires Rollup pour éviter MODULE_NOT_FOUND
+RUN npm rebuild rollup -f
 
-# ========================
-# Étape 2 : Runtime Node
-# ========================
-FROM node:20-alpine AS runtime
-WORKDIR /app
+# Build production assets
+RUN npm run build
 
-COPY --from=builder /app/package*.json ./
-RUN npm ci --production
+# ---- Stage 2: Serve with Nginx ----
+FROM nginx:alpine
 
-COPY --from=builder /app/dist /app/dist
+# Remove default Nginx content
+RUN rm -rf /usr/share/nginx/html/*
 
-EXPOSE 3000
+# Copy built assets from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-CMD ["node", "dist/server/server.js"]
+# Copy custom Nginx config for SPA fallback
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port 80
+EXPOSE 80
+
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]

@@ -78,8 +78,7 @@ impl MongoStockManager {
 
     async fn save_one_stock_dto(&self, dto: &GenericStockDataDTO) -> Result<()> {
         let filter = doc! {
-        "symbol": &dto.symbol,
-        "date": dto.date.to_string(),
+        "symbol": &dto.symbol
     };
 
         let opts = ReplaceOptions::builder().upsert(true).build();

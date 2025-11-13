@@ -6,8 +6,6 @@ use axum::{
 };
 use crate::infrastructure::db::mongo_stock_manager::MongoStockManager;
 use std::sync::Arc;
-
-// **Importer la fonction correctement**
 use crate::infrastructure::external_api::job_fetch_symbol::job_fetch_finnhub::fetch_all_stocks_from_finnhub;
 
 // ---- ROUTER ADMIN ----
