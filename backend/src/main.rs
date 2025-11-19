@@ -6,7 +6,10 @@ use axum::{
     Router,
     extract::Extension,
 };
-use infrastructure::external_api::stock_repository::finnhub_repository::FinnhubRepository;
+use infrastructure::external_api::stock_repository::{
+    finnhub_repository::FinnhubRepository,
+    fake_stock_repository::FakeStockRepository,
+};
 use crate::application::stock_repository::StockRepository;
 use crate::infrastructure::db::mongo_stock_manager::MongoStockManager;
 use std::sync::Arc;
@@ -30,7 +33,7 @@ async fn main() {
     println!("MONGO_URI = {}", mongo_uri);
     println!("MONGO_DB = {}", db_name);
 
-    println!("Connexion à MongoDB: {}", db_name);
+    println!("Connexion à MongoDB: {}...", db_name);
     let mongo_manager = match MongoStockManager::new(&mongo_uri, &db_name).await {
         Ok(manager) => {
             println!("Connexion à MongoDB réussie !");
@@ -42,9 +45,14 @@ async fn main() {
         }
     };
 
-    let finnhub_api_key = env::var("FINNHUB_API_KEY").expect("FINNHUB_API_KEY manquant dans .env");
+    let finnhub_api_key = env::var("FINNHUB_API_KEY").expect("FINNHUB_API_KEY manquant dans .env")
+        .trim().to_string();
+
     let finnhub_repo = Arc::new(FinnhubRepository::new(finnhub_api_key));
-    let external_repos: Vec<Arc<dyn StockRepository>> = vec![finnhub_repo];
+    let fake_repo = Arc::new(FakeStockRepository);
+
+    let external_repos: Vec<Arc<dyn StockRepository>> = vec![finnhub_repo, fake_repo];
+
 
     let stock_manager = Arc::new(StockManager::new(mongo_manager.clone(), external_repos));
 

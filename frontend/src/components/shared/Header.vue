@@ -1,10 +1,13 @@
 <template>
   <header class="header">
     <div class="container">
-      <img :src="logo" alt="MarketPulse Logo" class="logo" />
+      <router-link to="/">
+        <img :src="logo" alt="MarketPulse Logo" class="logo" />
+      </router-link>
+
       <nav>
         <ul class="nav-list">
-          <li><a href="#">Home</a></li>
+          <li><router-link to="/">Home</router-link></li>
           <li><a href="#">Features</a></li>
           <li><a href="#">Pricing</a></li>
           <li><a href="#">Contact</a></li>

@@ -8,7 +8,6 @@ use axum::{
 use crate::application::stock_manager::StockManager;
 use crate::domain::stock_summary::StockSummary;
 use crate::infrastructure::db::mongo_stock_manager::MongoStockManager;
-use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -91,39 +90,35 @@ async fn search_stock(
         }
     }
 }
-
 async fn get_stock_info(
     Query(query): Query<StockQuery>,
     Extension(stock_manager): Extension<Arc<StockManager>>,
-) -> Json<Vec<StockResponse>> {
+) -> Json<Option<StockResponse>> {
     match stock_manager.get_stock_dto(&query.symbol).await {
-        Ok(data) if !data.is_empty() => {
-            let response = data
-                .into_iter()
-                .map(|dto| StockResponse {
-                    symbol: dto.symbol,
-                    provider: dto.provider.clone(),
-                    historical_segments: dto.historical_segments.into_iter().map(|seg| StockSegmentResponse {
-                        start_date: seg.start_date,
-                        end_date: seg.end_date,
-                        interval: format!("{:?}", seg.interval),
-                        data_points: seg.data_points.into_iter().map(|pt| StockPointResponse {
-                            timestamp: pt.timestamp,
-                            open: pt.open,
-                            close: pt.close,
-                            high: pt.high,
-                            low: pt.low,
-                            volume: pt.volume,
-                        }).collect(),
+        Ok(Some(dto)) => {
+            let response = StockResponse {
+                symbol: dto.symbol,
+                provider: dto.provider.clone(),
+                historical_segments: dto.historical_segments.into_iter().map(|seg| StockSegmentResponse {
+                    start_date: seg.start_date,
+                    end_date: seg.end_date,
+                    interval: format!("{:?}", seg.interval),
+                    data_points: seg.data_points.into_iter().map(|pt| StockPointResponse {
+                        timestamp: pt.timestamp,
+                        open: pt.open,
+                        close: pt.close,
+                        high: pt.high,
+                        low: pt.low,
+                        volume: pt.volume,
                     }).collect(),
-                })
-                .collect();
-            Json(response)
+                }).collect(),
+            };
+            Json(Some(response))
         }
-        Ok(_) => Json(vec![]),
+        Ok(None) => Json(None),
         Err(err) => {
             eprintln!("Erreur lors de la récupération du stock : {:?}", err);
-            Json(vec![])
+            Json(None)
         }
     }
 }

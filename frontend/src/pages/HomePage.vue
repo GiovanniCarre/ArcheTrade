@@ -44,7 +44,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { StockService } from '../services/StockService.ts'
-import type { StockSummary } from '../models/StockSummary.ts'
+import type { StockSummary } from '../models/stocks/StockSummary.ts'
 
 const query = ref('')
 const stockSearch = ref<StockSummary[]>([])

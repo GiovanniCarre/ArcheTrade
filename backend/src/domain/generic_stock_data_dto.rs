@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::{DateTime, Utc};
 use crate::domain::time_series::StockSegment;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

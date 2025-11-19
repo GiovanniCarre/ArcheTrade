@@ -19,30 +19,27 @@ impl StockManager {
         }
     }
 
-    pub async fn get_stock_dto(&self, symbol: &str) -> Result<Vec<GenericStockDataDTO>> {
-        let local_data = self.local_repo.get_stock_dto(symbol).await?;
-        println!("🔍 Recherche du stock '{}'", symbol);
-        if !local_data.is_empty() {
-            println!("✅ Données trouvées en local : {} éléments", local_data.len());
+    pub async fn get_stock_dto(&self, symbol: &str) -> Result<Option<GenericStockDataDTO>> {
+        println!("Recherche du stock '{}'", symbol);
 
-            return Ok(local_data);
+        let local_data = self.local_repo.get_stock_dto(symbol).await?;
+        if let Some(dto) = local_data {
+            return Ok(Some(dto));
         }
-        println!("⚠️ Pas de données en local, recherche dans les dépôts externes...");
 
         for (i, repo) in self.external_repos.iter().enumerate() {
-            println!("🌐 Recherche dans le dépôt externe #{}", i + 1);
-
             let external_data = repo.get_stock_dto(symbol).await?;
-            if !external_data.is_empty() {
-                println!("✅ Données trouvées dans le dépôt externe #{} : {} éléments", i + 1, external_data.len());
-                self.local_repo.save_stock_dto(&external_data).await?;
-                return Ok(external_data);
-            } else {
-                println!("❌ Aucun résultat dans le dépôt externe #{}", i + 1);
+            if let Some(dto) = external_data {
+
+                //Sauvegarde en local
+                if let Err(e) = self.local_repo.save_stock_dto(&dto).await { eprintln!("⚠️ Échec sauvegarde locale : {:?}", e);
+                }
+
+                return Ok(Some(dto));
             }
         }
 
-        println!("⚠️ Aucun résultat trouvé pour '{}'", symbol);
-        Ok(Vec::new())
+        println!("Aucun résultat trouvé pour '{}'", symbol);
+        Ok(None)
     }
 }

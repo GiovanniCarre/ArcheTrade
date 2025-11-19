@@ -2,14 +2,10 @@ use crate::domain::stock_summary::StockSummary;
 use crate::domain::generic_stock_data_dto::GenericStockDataDTO;
 use crate::domain::utils::can_be_symbol;
 use crate::application::stock_repository::StockRepository;
-use mongodb::options::ReplaceOptions;
 use anyhow::Result;
 use futures::TryStreamExt;
 use async_trait::async_trait;
-use mongodb::{
-    bson::{doc, Regex},
-    Client, Collection,
-};
+use mongodb::{bson::{doc, Regex}, Client, Collection};
 
 pub struct MongoStockManager {
     summary_collection: Collection<StockSummary>,
@@ -18,27 +14,30 @@ pub struct MongoStockManager {
 
 #[async_trait]
 impl StockRepository for MongoStockManager {
-    async fn get_stock_dto(&self, symbol: &str) -> Result<Vec<GenericStockDataDTO>> {
+    async fn get_stock_dto(&self, symbol: &str) -> Result<Option<GenericStockDataDTO>> {
         let filter = doc! { "symbol": symbol };
-        let mut cursor = self
-            .data_collection
-            .find(filter)
-            .sort(doc! { "date": -1 })
-            .limit(1)
-            .await?;
 
+        // Avec ce driver, on fait juste un find + try_next pour récupérer le premier
+        let mut cursor = self.data_collection.find(filter).await?;
         let opt = cursor.try_next().await?;
-        let vec = match opt {
-            Some(dto) => vec![dto],
-            None => vec![],
-        };
-        Ok(vec)
+        Ok(opt)
     }
 
-    async fn save_stock_dto(&self, data: &[GenericStockDataDTO]) -> Result<()> {
-        for dto in data {
-            self.save_one_stock_dto(dto).await?;
+    async fn save_stock_dto(&self, dto: &GenericStockDataDTO) -> Result<()> {
+        let filter = doc! { "symbol": &dto.symbol };
+
+        // Vérifie si le document existe déjà
+        let mut cursor = self.data_collection.find(filter.clone()).await?;
+        let existing = cursor.try_next().await?;
+
+        if let Some(_) = existing {
+            // Le document existe, on le remplace
+            self.data_collection.replace_one(filter, dto).await?;
+        } else {
+            // Le document n'existe pas, on l'insère
+            self.data_collection.insert_one(dto).await?;
         }
+
         Ok(())
     }
 }
@@ -72,21 +71,7 @@ impl MongoStockManager {
             doc! { "name": { "$regex": Regex { pattern: query.to_string(), options: "i".into() } } }
         };
 
-        let cursor = self.summary_collection.find(filter).limit(10).await?;
+        let cursor = self.summary_collection.find(filter).await?;
         Ok(cursor.try_collect().await?)
-    }
-
-    async fn save_one_stock_dto(&self, dto: &GenericStockDataDTO) -> Result<()> {
-        let filter = doc! {
-        "symbol": &dto.symbol
-    };
-
-        let opts = ReplaceOptions::builder().upsert(true).build();
-
-        self.data_collection
-            .replace_one(filter, dto)
-            .await?;
-
-        Ok(())
     }
 }
