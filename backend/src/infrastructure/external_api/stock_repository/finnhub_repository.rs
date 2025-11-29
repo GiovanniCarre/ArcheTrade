@@ -119,12 +119,12 @@ impl StockRepository for FinnhubRepository {
                     data_points: points,
                 };
 
-                let dto = GenericStockDataDTO {
-                    symbol: symbol.to_string(),
-                    provider: Some("Finnhub".to_string()),
-                    last_update: Some(Utc::now()),
-                    historical_segments: vec![segment],
-                };
+                let dto = GenericStockDataDTO::new(
+                    symbol.to_string(),
+                    Some("Finnhub".to_string()),
+                    Some(Utc::now()),
+                    vec![segment],
+                );
 
                 Ok(Some(dto))
             }

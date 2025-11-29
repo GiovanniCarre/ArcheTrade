@@ -24,14 +24,98 @@
     </div>
 
     <div id="graphiqueSection">
-      <LineChart :data="chartData" :options="chartOptions" />
+      <LineChart ref="lineChart" :data="chartData" :options="chartOptions" />
     </div>
 
-    <div id="insightWrapper"></div>
+    <div id="insightWrapper" v-if="stockData?.insights">
+      <h2 class="insight-title">Insights du stock</h2>
+      <div class="insights-grid">
+        <div class="insight-card" title="Dernier prix du stock">
+          <strong>Dernier prix</strong>
+          <p>{{ formatNumber(stockData.insights.last_price) }}</p>
+        </div>
+        <div class="insight-card" title="Variation du jour">
+          <strong>Variation du jour</strong>
+          <p>{{ formatNumber(stockData.insights.day_change) }}</p>
+        </div>
+        <div class="insight-card" title="% Variation du jour">
+          <strong>% Variation</strong>
+          <p>{{ formatNumber(stockData.insights.day_change_percent) }}</p>
+        </div>
+        <div class="insight-card" title="Moyenne mobile simple sur 7 jours">
+          <strong>SMA 7</strong>
+          <p>{{ formatNumber(stockData.insights.sma_7) }}</p>
+        </div>
+        <div class="insight-card" title="Moyenne mobile simple sur 30 jours">
+          <strong>SMA 30</strong>
+          <p>{{ formatNumber(stockData.insights.sma_30) }}</p>
+        </div>
+        <div class="insight-card" title="Moyenne mobile exponentielle sur 7 jours">
+          <strong>EMA 7</strong>
+          <p>{{ formatNumber(stockData.insights.ema_7) }}</p>
+        </div>
+        <div class="insight-card" title="Moyenne mobile exponentielle sur 30 jours">
+          <strong>EMA 30</strong>
+          <p>{{ formatNumber(stockData.insights.ema_30) }}</p>
+        </div>
+        <div class="insight-card" title="Bollinger supérieur">
+          <strong>Bollinger ↑</strong>
+          <p>{{ formatNumber(stockData.insights.bollinger_upper) }}</p>
+        </div>
+        <div class="insight-card" title="Bollinger inférieur">
+          <strong>Bollinger ↓</strong>
+          <p>{{ formatNumber(stockData.insights.bollinger_lower) }}</p>
+        </div>
+        <div class="insight-card" title="RSI sur 14 jours">
+          <strong>RSI 14</strong>
+          <p>{{ formatNumber(stockData.insights.rsi_14) }}</p>
+        </div>
+        <div class="insight-card" title="MACD">
+          <strong>MACD</strong>
+          <p>{{ formatNumber(stockData.insights.macd) }}</p>
+        </div>
+        <div class="insight-card" title="ATR sur 14 jours">
+          <strong>ATR 14</strong>
+          <p>{{ formatNumber(stockData.insights.atr_14) }}</p>
+        </div>
+        <div class="insight-card" title="Max drawdown sur 30 jours">
+          <strong>Max Drawdown 30j</strong>
+          <p>{{ formatNumber(stockData.insights.max_drawdown_30d) }}</p>
+        </div>
+        <div class="insight-card" title="Tendance actuelle">
+          <strong>Tendance</strong>
+          <p>{{ stockData.insights.trend ?? '-' }}</p>
+        </div>
+        <div class="insight-card" title="Gain cumulatif sur 30 jours">
+          <strong>Gain 30j</strong>
+          <p>{{ formatNumber(stockData.insights.cumulative_gain_30d) }}</p>
+        </div>
+        <div class="insight-card" title="Volume moyen sur 30 jours">
+          <strong>Volume 30j</strong>
+          <p>{{ formatNumber(stockData.insights.volume_avg_30d) }}</p>
+        </div>
+        <div class="insight-card" title="Volatilité sur 30 jours">
+          <strong>Volatilité 30j</strong>
+          <p>{{ formatNumber(stockData.insights.volatility_30d) }}</p>
+        </div>
+        <div class="insight-card" title="Prix vs secteur">
+          <strong>Prix vs Secteur</strong>
+          <p>{{ formatNumber(stockData.insights.price_vs_sector) }}</p>
+        </div>
+        <div class="insight-card" title="Alerte surachat">
+          <strong>Surachat</strong>
+          <p>{{ stockData.insights.alert_overbought ? 'Oui' : 'Non' }}</p>
+        </div>
+        <div class="insight-card" title="Alerte survente">
+          <strong>Survente</strong>
+          <p>{{ stockData.insights.alert_oversold ? 'Oui' : 'Non' }}</p>
+        </div>
+      </div>
+    </div>
+
 
     <div class="actionBoutton">
-      <button>Compare with</button>
-      <button>Predict the future of the action</button>
+      <button @click="goToPredict">Predict the future of the action</button>
     </div>
 
   </section>
@@ -83,6 +167,11 @@ const stockData = ref<GenericStockDataDTO | null>(null);
 
 const selectedMetric = ref<'close'|'open'|'high'|'low'|'volume'|'gain'>('close');
 
+function formatNumber(value: number | undefined | null, digits = 4): string {
+  if (value === undefined || value === null) return '-';
+  return value.toFixed(digits);
+}
+
 const chartData = ref({
   labels: [] as string[],
   datasets: [
@@ -98,6 +187,14 @@ const chartData = ref({
   ]
 });
 
+function goToPredict() {
+  if (stockData.value) {
+
+    localStorage.setItem("selectedStock", JSON.stringify(stockData.value));
+    router.push({path: '/predict',});
+  }
+}
+
 const chartOptions = ref({
   responsive: true,
   interaction: { mode: 'index' as const, intersect: false },
@@ -108,9 +205,7 @@ const chartOptions = ref({
     y1: { type: 'linear', position: 'right', title: { display: true, text: 'Gain / Perte' }, grid: { drawOnChartArea: false } }
   }
 });
-
 const chartDataInitialized = ref(false);
-
 function updateChartData() {
   if (!stockData.value) return;
 
@@ -120,68 +215,106 @@ function updateChartData() {
   allPoints.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   chartData.value.labels = allPoints.map(p => new Date(p.timestamp).toLocaleDateString('fr-FR'));
 
-  switch(selectedMetric.value) {
+  switch (selectedMetric.value) {
     case 'close':
-      chartData.value.datasets = [{
-        type: 'line',
-        label: 'Prix de clôture',
-        data: allPoints.map(p => p.close),
-        borderColor: 'purple',
-        backgroundColor: 'rgba(0,0,255,0.1)',
-        tension: 0.3,
-        yAxisID: 'y'
-      }];
+      chartData.value = {
+        labels: allPoints.map(p => new Date(p.timestamp).toLocaleDateString('fr-FR')),
+        datasets: [{
+          type: 'line',
+          label: 'Prix de clôture',
+          data: allPoints.map(p => p.close),
+          borderColor: 'purple',
+          backgroundColor: 'rgba(0,0,255,0.1)',
+          tension: 0.3,
+          yAxisID: 'y'
+        }]
+      };
       break;
+
     case 'open':
-      chartData.value.datasets = [{
-        type: 'line',
-        label: 'Prix d\'ouverture',
-        data: allPoints.map(p => p.open),
-        borderColor: 'cyan',
-        backgroundColor: 'rgba(0,255,255,0.1)',
-        tension: 0.3,
-        yAxisID: 'y'
-      }];
+      chartData.value = {
+        labels: allPoints.map(p => new Date(p.timestamp).toLocaleDateString('fr-FR')),
+        datasets: [{
+          type: 'line',
+          label: 'Prix d\'ouverture',
+          data: allPoints.map(p => p.open),
+          borderColor: 'cyan',
+          backgroundColor: 'rgba(0,255,255,0.1)',
+          tension: 0.3,
+          yAxisID: 'y'
+        }]
+      };
       break;
+
     case 'high':
-      chartData.value.datasets = [{
-        type: 'line',
-        label: 'Haut',
-        data: allPoints.map(p => p.high),
-        borderColor: 'green',
-        backgroundColor: 'rgba(0,255,0,0.1)',
-        tension: 0.3,
-        yAxisID: 'y'
-      }];
+      chartData.value = {
+        labels: allPoints.map(p => new Date(p.timestamp).toLocaleDateString('fr-FR')),
+        datasets: [{
+          type: 'line',
+          label: 'Haut',
+          data: allPoints.map(p => p.high),
+          borderColor: 'green',
+          backgroundColor: 'rgba(0,255,0,0.1)',
+          tension: 0.3,
+          yAxisID: 'y'
+        }]
+      };
       break;
+
     case 'low':
-      chartData.value.datasets = [{
-        type: 'line',
-        label: 'Bas',
-        data: allPoints.map(p => p.low),
-        borderColor: 'red',
-        backgroundColor: 'rgba(255,0,0,0.1)',
-        tension: 0.3,
-        yAxisID: 'y'
-      }];
+      chartData.value = {
+        labels: allPoints.map(p => new Date(p.timestamp).toLocaleDateString('fr-FR')),
+        datasets: [{
+          type: 'line',
+          label: 'Bas',
+          data: allPoints.map(p => p.low),
+          borderColor: 'red',
+          backgroundColor: 'rgba(255,0,0,0.1)',
+          tension: 0.3,
+          yAxisID: 'y'
+        }]
+      };
       break;
+
     case 'volume':
-      chartData.value.datasets = [{
-        type: 'bar',
-        label: 'Volume',
-        data: allPoints.map(p => p.volume),
-        backgroundColor: 'purple',
-        yAxisID: 'y'
-      }];
+      chartData.value = {
+        labels: allPoints.map(p => new Date(p.timestamp).toLocaleDateString('fr-FR')),
+        datasets: [{
+          type: 'bar',
+          label: 'Volume',
+          data: allPoints.map(p => p.volume),
+          backgroundColor: 'purple',
+          yAxisID: 'y'
+        }]
+      };
       break;
+
     case 'gain':
-      chartData.value.datasets = [{
-        type: 'bar',
-        label: 'Gain / Perte',
-        data: allPoints.map(p => p.close - p.open),
-        backgroundColor: allPoints.map(p => (p.close - p.open) >= 0 ? 'green' : 'red'),
-        yAxisID: 'y1'
-      }];
+      chartData.value = {
+        labels: allPoints.map(p => new Date(p.timestamp).toLocaleDateString('fr-FR')),
+        datasets: [{
+          type: 'bar',
+          label: 'Gain / Perte',
+          data: allPoints.map(p => p.close - p.open),
+          backgroundColor: allPoints.map(p => (p.close - p.open) >= 0 ? 'green' : 'red'),
+          yAxisID: 'y1'
+        }]
+      };
+      break;
+
+    default:
+      console.warn("⛔ Métrique inconnue :", selectedMetric.value);
+      chartData.value = {
+        labels: [],
+        datasets: [{
+          type: 'line',
+          label: 'Inconnu',
+          data: [],
+          borderColor: 'gray',
+          backgroundColor: 'rgba(128,128,128,0.1)',
+          yAxisID: 'y'
+        }]
+      };
       break;
   }
 }
@@ -287,11 +420,14 @@ onMounted(async () => {
 }
 
 .actionBoutton button:last-child {
-  color: yellow;
+  color: white;
+  border-radius:1rem;
+  border: 2px solid purple;
 }
 
 .actionBoutton button:last-child:hover {
-  background-color: yellow;
+  background-color: transparent;
+  color:purple;
 }
 
 .text-center {
@@ -299,5 +435,45 @@ onMounted(async () => {
   padding: 4rem 1rem;
   color: gray;
 }
+
+#insightWrapper {
+  margin-bottom: 2rem;
+}
+
+.insight-title {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: purple;
+  margin-bottom: 1rem;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.insight-card {
+  background-color: white;
+  border: 1px solid white;
+  border-radius: 8px;
+  padding: 0.8rem;
+  text-align: center;
+  color: purple;
+  transition: transform 0.2s ease;
+}
+
+.insight-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.insight-card strong {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+}
+
 </style>
 

@@ -45,12 +45,12 @@ impl StockRepository for FakeStockRepository {
             data_points: points,
         };
 
-        let dto = GenericStockDataDTO {
-            symbol: symbol.to_string(),
-            provider: Some("FakeData".to_string()),
-            last_update: Some(Utc::now()),
-            historical_segments: vec![segment],
-        };
+        let dto = GenericStockDataDTO::new(
+            symbol.to_string(),
+            Some("FakeData".to_string()),
+            Some(Utc::now()),
+            vec![segment],
+        );
 
         Ok(Some(dto))
     }

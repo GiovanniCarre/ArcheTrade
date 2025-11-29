@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use crate::application::stock_repository::StockRepository;
-use crate::domain::generic_stock_data_dto::GenericStockDataDTO;
+pub use crate::domain::generic_stock_data_dto::GenericStockDataDTO;
 use anyhow::Result;
 
 pub struct StockManager {

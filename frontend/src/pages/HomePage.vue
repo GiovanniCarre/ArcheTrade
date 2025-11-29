@@ -111,15 +111,15 @@ const selectStock = (stock: StockSummary) => {
 
 <style scoped>
 #contentPage {
-  background: linear-gradient(135deg, purple 0%, #a29bfe 100%);
-  color: #fff;
+  background: mediumpurple;
+  color: white;
   text-align: center;
   padding: 6rem 1rem;
 }
 
 #title {
   font-size: 3rem;
-  font-weight: 700;
+  font-weight: bold;
   margin-bottom: 1rem;
 }
 
@@ -185,7 +185,7 @@ const selectStock = (stock: StockSummary) => {
 
 .suggestions li.active,
 .suggestions li:hover {
-  background-color: #6c5ce7;
+  background-color: purple;
   color: white;
 }
 
@@ -197,10 +197,8 @@ const selectStock = (stock: StockSummary) => {
 
 .search-error {
   margin-top: 1rem;
-  background: rgba(255, 77, 77, 0.15);
-  color: #ffb3b3;
-  border: 2px solid rgba(255, 77, 77, 0.4);
-  border-radius: 1rem;
+  background: brown;
+  color: pink;
   padding: 0.75rem 1.25rem;
   font-weight: 600;
 }

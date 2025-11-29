@@ -6,6 +6,7 @@ use axum::{
     Router,
     extract::Extension,
 };
+
 use infrastructure::external_api::stock_repository::{
     finnhub_repository::FinnhubRepository,
     fake_stock_repository::FakeStockRepository,
@@ -20,6 +21,11 @@ use application::stock_manager::StockManager;
 use dotenv::dotenv;
 use std::env;
 use interfaces::admin_handler;
+use crate::application::predicators::{NaivePredictor, SmaPredictor, StockPredictor};
+use crate::application::predicators::ar_predictor::ArPredictor;
+use crate::application::predicators::ema_predictor::EmaPredictor;
+use crate::application::predicators::linear_regression_predictor::LinearRegressionPredictor;
+use crate::application::prediction_service::PredictionService;
 
 #[tokio::main]
 async fn main() {
@@ -53,14 +59,26 @@ async fn main() {
 
     let external_repos: Vec<Arc<dyn StockRepository>> = vec![finnhub_repo, fake_repo];
 
-
     let stock_manager = Arc::new(StockManager::new(mongo_manager.clone(), external_repos));
+    let predictors: Vec<Arc<dyn StockPredictor>> = vec![
+        Arc::new(NaivePredictor),
+        Arc::new(SmaPredictor),
+        Arc::new(EmaPredictor),
+        Arc::new(LinearRegressionPredictor),
+        Arc::new(ArPredictor),
+    ];
+
+    let prediction_service = Arc::new(PredictionService::new(predictors));
 
     let app = Router::new()
-        .nest("/api", create_router(mongo_manager.clone(), stock_manager.clone()))
-        .nest("/api", admin_handler::admin_router(mongo_manager.clone()))
+        .nest(
+            "/api",
+            create_router(mongo_manager.clone(), stock_manager.clone())
+                .merge(admin_handler::admin_router(mongo_manager.clone()))
+        )
         .layer(cors)
-       .layer(Extension(mongo_manager.clone()));
+        .layer(Extension(mongo_manager.clone()))
+        .layer(Extension(prediction_service));
 
     let listener = TcpListener::bind("127.0.0.1:3000").await.unwrap();
     println!("Listening on {}", listener.local_addr().unwrap());
