@@ -18,7 +18,6 @@ use tokio::net::TcpListener;
 use tower_http::cors::{Any, CorsLayer};
 use interfaces::stock_handler::create_router;
 use application::stock_manager::StockManager;
-use dotenv::dotenv;
 use std::env;
 use interfaces::admin_handler;
 use crate::application::predicators::{NaivePredictor, SmaPredictor, StockPredictor};
@@ -31,10 +30,9 @@ use crate::application::prediction_service::PredictionService;
 async fn main() {
     let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any);
 
-    dotenv().ok();
-
-    let mongo_uri = env::var("MONGO_URI").expect("MONGO_URI manquant dans .env");
-    let db_name = env::var("MONGO_DB").expect("manquant dans .env");
+    let mongo_uri = env::var("MONGO_URI").expect("MONGO_URI manquant");
+    let db_name = env::var("MONGO_DB").expect("MONGO_DB manquant");
+    let finnhub_api_key = env::var("FINNHUB_API_KEY").expect("FINNHUB_API_KEY manquant").trim().to_string();;
 
     println!("MONGO_URI = {}", mongo_uri);
     println!("MONGO_DB = {}", db_name);
@@ -51,8 +49,6 @@ async fn main() {
         }
     };
 
-    let finnhub_api_key = env::var("FINNHUB_API_KEY").expect("FINNHUB_API_KEY manquant dans .env")
-        .trim().to_string();
 
     let finnhub_repo = Arc::new(FinnhubRepository::new(finnhub_api_key));
     let fake_repo = Arc::new(FakeStockRepository);
@@ -80,7 +76,7 @@ async fn main() {
         .layer(Extension(mongo_manager.clone()))
         .layer(Extension(prediction_service));
 
-    let listener = TcpListener::bind("127.0.0.1:3000").await.unwrap();
+    let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
     println!("Listening on {}", listener.local_addr().unwrap());
 
     axum::serve(listener, app).await.unwrap();

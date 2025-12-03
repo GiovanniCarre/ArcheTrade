@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/marketpulse.iml" filepath="$PROJECT_DIR$/marketpulse.iml" />
+      <module fileurl="file://$PROJECT_DIR$/archetrade.iml" filepath="$PROJECT_DIR$/archetrade.iml" />
     </modules>
   </component>
 </project>

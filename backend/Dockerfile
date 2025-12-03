@@ -1,17 +1,30 @@
-# Image avec Rust et Cargo pour le dev
-FROM rust:1.83
+# Build stage
+FROM rust:1.90.0 AS builder
+WORKDIR /usr/src/app
 
-# Répertoire de travail
-WORKDIR /usr/src/backend
+# Installer dépendances système (openssl / certs) si besoin
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+     pkg-config libssl-dev ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
-# Copier le projet dans l'image (utile pour build initial)
-COPY . .
+# Copier les manifests Cargo pour cache des dépendances
+COPY Cargo.toml Cargo.lock ./
+# Copier tout le code
+COPY src ./src
 
-# Installer des outils utiles pour dev (optionnel)
-RUN rustup component add clippy rustfmt
+# Compiler en release
+RUN cargo build --release --locked
 
-# Exposer le port utilisé par ton serveur
+# Runtime stage
+FROM debian:bookworm-slim AS runtime
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=builder /usr/src/app/target/release/backend /app/backend
+RUN chmod +x /app/backend
+
 EXPOSE 3000
-
-# Lancer le serveur en mode dev avec hot reload
-CMD ["cargo", "run"]
+ENTRYPOINT ["/app/backend"]
