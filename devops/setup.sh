@@ -76,7 +76,9 @@ RUN_CMD=(docker run -d
   -v jenkins-data:/var/jenkins_home
   -v /var/run/docker.sock:/var/run/docker.sock
   -v /usr/local/bin/docker-compose:/usr/local/bin/docker-compose
+  -v /root/archetrade/.env:/var/jenkins_home/workspace/Archetrade/backend/.env
   --user root
+  jenkins/jenkins:lts
 )
 
 # Montage optionnel du projet
