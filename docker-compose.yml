@@ -23,7 +23,7 @@ services:
     container_name: backend_rust
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "5001:3000"
     env_file:
       - /var/jenkins_home/.env
     depends_on:
