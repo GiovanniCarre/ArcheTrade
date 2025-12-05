@@ -37,7 +37,7 @@ services:
     container_name: frontend_vue
     restart: unless-stopped
     ports:
-      - "5010:8080"
+      - "5010:80"
     networks:
       - backend-net
 
