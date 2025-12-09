@@ -4,7 +4,7 @@ import {mapToGenericStockDataDTO} from "@/adapter/StockAdapter.ts";
 import type {PredictionPoint} from "@/models/stocks/PredictionPoint.ts";
 import type {StockSegment} from "@/models/stocks/StockSegment.ts";
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_BACKEND_URL || "http://backend:3000/api";
 
 export class StockService {
     private baseUrl: string;
