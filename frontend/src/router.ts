@@ -7,7 +7,7 @@ export function createRouter() {
     return _createRouter({
         history: createWebHistory(),
         routes: [
-            { path: '/', component: HomePage },
+            { path: '/archetrade/', component: HomePage },
             { path: '/stock', component: StockDetailPage },
             { path: '/predict', component: PredictPage }
         ],

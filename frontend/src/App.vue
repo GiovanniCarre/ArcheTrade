@@ -13,6 +13,6 @@ import Footer from "./components/shared/Footer.vue";
 body {
   margin: 0;
   font-family: "Poppins", sans-serif;
-  background-color: #f8f9ff;
+  background-color: white;
 }
 </style>
